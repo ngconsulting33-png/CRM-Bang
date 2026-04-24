@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BANG Solution Trading — CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --bg:#f2f1ed;--surface:#ffffff;--surface2:#f7f6f2;--surface3:#eeecea;
+    --border:#e0ddd6;--border2:#eae8e3;
+    --text:#1a1814;--text2:#6b6760;--text3:#aaa49e;
+    --accent:#1c3a5e;--accent2:#2b5080;--accent-lt:#e8eef5;
+    --gold:#b08030;--gold-lt:#fdf4e7;
+    --green:#1a7a4a;--green-lt:#e8f5ee;
+    --orange:#c06020;--orange-lt:#fef0e6;
+    --red:#b03030;--red-lt:#fdeaea;
+    --blue:#1a50aa;--blue-lt:#e8eef8;
+    --shopify:#4a7010;--shopify-bg:#f0f7e0;--shopify-border:#c0d880;
+    --wix:#0c6ebd;--wix-bg:#e4f0fb;--wix-border:#90c4e8;
+    --radius:12px;--radius-sm:8px;
+    --shadow:0 2px 12px rgba(0,0,0,0.07);--shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden;}
+
+  .sidebar{width:252px;background:var(--accent);display:flex;flex-direction:column;flex-shrink:0;}
+  .sidebar-logo{padding:24px 22px 18px;border-bottom:1px solid rgba(255,255,255,0.1);}
+  .logo-name{font-family:'Playfair Display',serif;font-size:16px;color:#fff;font-weight:700;line-height:1.3;}
+  .logo-sub{font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:2.5px;text-transform:uppercase;margin-top:4px;}
+  .sidebar-nav{padding:12px 10px;flex:1;overflow-y:auto;}
+  .nav-section{font-size:8.5px;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase;padding:12px 12px 5px;margin-top:4px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;margin-bottom:2px;color:rgba(255,255,255,0.62);font-size:13px;font-weight:500;transition:all .15s;border:1px solid transparent;user-select:none;}
+  .nav-item:hover{background:rgba(255,255,255,0.1);color:#fff;}
+  .nav-item.active{background:rgba(255,255,255,0.16);color:#fff;border-color:rgba(255,255,255,0.15);}
+  .nav-icon{font-size:14px;width:20px;text-align:center;}
+  .sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,0.1);}
+  .airtable-status{display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:#888;flex-shrink:0;}
+  .status-dot.on{background:#4cde88;}
+
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .topbar{padding:15px 26px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);box-shadow:0 1px 4px rgba(0,0,0,0.04);}
+  .page-title{font-family:'Playfair Display',serif;font-size:23px;color:var(--accent);font-weight:600;}
+  .topbar-right{display:flex;gap:8px;align-items:center;}
+  .content{flex:1;overflow-y:auto;padding:22px 26px;}
+
+  .btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;font-size:12.5px;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:var(--accent2);}
+  .btn-secondary{background:var(--surface3);color:var(--text2);border:1px solid var(--border);}.btn-secondary:hover{background:var(--border);}
+  .btn-danger{background:var(--red-lt);color:var(--red);border:1px solid #f0c8c8;}
+  .btn-green{background:var(--green-lt);color:var(--green);border:1px solid #b8e0cc;}
+  .btn-ics{background:#e8f0ff;color:#3366cc;border:1px solid #b8ccf0;}
+  .btn-sm{padding:4px 11px;font-size:11px;}
+
+  .avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;flex-shrink:0;color:#fff;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .card-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--accent);font-weight:600;margin-bottom:14px;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-top:3px solid var(--accent);}
+  .stat-icon{font-size:17px;margin-bottom:7px;}
+  .stat-val{font-family:'Playfair Display',serif;font-size:26px;color:var(--accent);line-height:1;margin-bottom:3px;}
+  .stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .stat-sub{margin-top:7px;font-size:11px;color:var(--text3);}
+
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;padding:9px 13px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;border-bottom:2px solid var(--border);white-space:nowrap;background:var(--surface2);}
+  td{padding:11px 13px;border-bottom:1px solid var(--border2);font-size:13px;vertical-align:middle;}
+  tr:hover td{background:var(--surface2);}
+  tr:last-child td{border-bottom:none;}
+
+  .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:600;}
+  .plat-shopify{background:var(--shopify-bg);color:var(--shopify);border:1px solid var(--shopify-border);font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700;display:inline-block;}
+  .plat-wix{background:var(--wix-bg);color:var(--wix);border:1px solid var(--wix-border);font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700;display:inline-block;}
+  .plat-both{background:#f0eaf8;color:#6030a0;border:1px solid #d0b8f0;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700;display:inline-block;}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap;}
+  .search-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 13px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;flex:1;min-width:180px;outline:none;box-shadow:var(--shadow);}
+  .search-input:focus{border-color:var(--accent);}
+  select.filter-select{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 13px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;outline:none;cursor:pointer;box-shadow:var(--shadow);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(20,16,10,0.45);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(3px);}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+  .modal-title{font-family:'Playfair Display',serif;font-size:19px;color:var(--accent);margin-bottom:20px;font-weight:600;}
+  .form-row{margin-bottom:13px;}
+  .form-label{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:600;}
+  .form-input,.form-select,.form-textarea{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 13px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;width:100%;outline:none;transition:border-color .15s;}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);background:var(--surface);}
+  .form-textarea{resize:vertical;min-height:68px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+  .form-section{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;padding:14px 0 8px;border-top:1px solid var(--border);margin-top:6px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .four-col{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+
+  .detail-panel{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--surface);border-left:1px solid var(--border);z-index:100;overflow-y:auto;padding:22px;box-shadow:-4px 0 20px rgba(0,0,0,0.09);}
+  .detail-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .detail-field{border-bottom:1px solid var(--border2);padding:10px 0;}
+  .detail-field-label{font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;font-weight:700;}
+  .detail-field-value{font-size:13px;}
+
+  .kanban{display:flex;gap:13px;overflow-x:auto;padding-bottom:12px;}
+  .kanban-col{min-width:200px;flex:1;}
+  .kanban-col-header{display:flex;align-items:center;gap:7px;margin-bottom:9px;}
+  .kanban-dot{width:9px;height:9px;border-radius:50%;}
+  .kanban-col-label{font-weight:600;font-size:12px;color:var(--text2);}
+  .kanban-col-total{margin-left:auto;font-size:10.5px;color:var(--text3);}
+  .deal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:9px;border-left-width:3px;transition:all .12s;box-shadow:var(--shadow);}
+  .deal-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+  .deal-card-title{font-weight:600;font-size:13px;margin-bottom:7px;}
+  .deal-card-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:8px;}
+  .prob-bar{height:3px;background:var(--border);border-radius:99px;margin-top:7px;}
+  .prob-fill{height:100%;border-radius:99px;}
+
+  .rdv-item{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid var(--border2);align-items:flex-start;}
+  .rdv-check{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;}
+  .rdv-actions{margin-left:auto;display:flex;gap:6px;align-items:center;flex-shrink:0;}
+
+  .history-item{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--border2);}
+  .history-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px;}
+  .history-text{font-size:12.5px;}
+  .history-date{font-size:10.5px;color:var(--text3);margin-top:2px;}
+
+  .app-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;}
+  .app-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;}
+  .app-box-name{font-weight:700;font-size:12px;margin-bottom:7px;color:var(--accent);}
+  .app-plan-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid var(--border2);}
+  .app-plan-row:last-child{border-bottom:none;}
+  .app-plan-label{color:var(--text2);}
+  .app-plan-count{font-weight:700;}
+
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:11px 22px;border-radius:99px;font-size:13px;font-weight:500;z-index:9999;box-shadow:var(--shadow-lg);animation:toastIn .22s ease;}
+  @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(14px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+  .tag-pill{display:inline-block;padding:2px 9px;background:var(--accent-lt);color:var(--accent);border-radius:99px;font-size:10.5px;margin:2px;font-weight:500;}
+  .close-btn{background:none;border:none;color:var(--text3);font-size:19px;cursor:pointer;transition:color .15s;}.close-btn:hover{color:var(--text);}
+  .empty-state{text-align:center;padding:44px;color:var(--text3);font-size:13.5px;}
+  .page{animation:fadeIn .18s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+  .hidden{display:none!important;}
+  ::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+
+  .config-box{background:var(--accent-lt);border:1px solid #c0d4f0;border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+  .config-title{font-weight:700;font-size:13px;color:var(--accent);margin-bottom:12px;}
+  .config-input{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 13px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;width:100%;outline:none;}
+  .rev-total{font-weight:700;color:var(--accent);font-family:'Playfair Display',serif;}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-name">BANG Solution<br>Trading</div>
+    <div class="logo-sub">CRM · Apps Shopify &amp; Wix</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Menu principal</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">⊞</span> Tableau de bord</div>
+    <div class="nav-item" onclick="showPage('agences')"><span class="nav-icon">🏢</span> Agences</div>
+    <div class="nav-item" onclick="showPage('pipeline')"><span class="nav-icon">▦</span> Pipeline</div>
+    <div class="nav-item" onclick="showPage('rdv')"><span class="nav-icon">📅</span> Rendez-vous</div>
+    <div class="nav-item" onclick="showPage('revenus')"><span class="nav-icon">💶</span> Revenus apps</div>
+    <div class="nav-section">Export</div>
+    <div class="nav-item" onclick="exportExcel()"><span class="nav-icon">📥</span> Exporter Excel</div>
+    <div class="nav-item" onclick="exportSelectedICS()"><span class="nav-icon">📆</span> → Google Agenda</div>
+    <div class="nav-section">Données</div>
+    <div class="nav-item" onclick="exportJSON()"><span class="nav-icon">💾</span> Sauvegarder</div>
+    <div class="nav-item" onclick="importJSON()"><span class="nav-icon">📂</span> Restaurer</div>
+    <div class="nav-item" onclick="showPage('config')"><span class="nav-icon">⚙️</span> Configuration</div>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="loadJSON(event)">
+  </nav>
+  <div class="sidebar-footer">
+    <div style="font-size:11.5px;font-weight:600;color:#fff" id="sidebarCount">0 agences</div>
+    <div class="airtable-status"><div class="status-dot" id="atDot"></div><span id="atTxt">Supabase non connecté</span></div>
+    <div class="airtable-status" id="syncStatus" style="display:none"><div class="status-dot" style="background:#f0a040"></div><span id="syncTxt">Synchronisation…</span></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="pageTitle">Tableau de bord</div>
+    <div class="topbar-right">
+      <span style="font-size:11.5px;color:var(--text3)" id="todayDate"></span>
+      <button class="btn btn-primary btn-sm hidden" id="topBtn" onclick="topAction()"></button>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="detail-panel hidden" id="detailPanel"></div>
+<div id="modalContainer"></div>
+
+<script>
+// ── APPS CONFIG ──
+const APPS = {
+  hexaship:{name:'Hexaship',platform:'shopify',desc:'Logistique',color:'#4a7010',bg:'#f0f7e0',border:'#c0d880',plans:['Basic','Grow','Advanced','Plus']},
+  survey:  {name:'Survey App',platform:'wix',desc:'Sondages',color:'#0c6ebd',bg:'#e4f0fb',border:'#90c4e8',plans:['Unique']},
+  panier:  {name:'Abandon Panier',platform:'wix',desc:'Récupération paniers',color:'#0c6ebd',bg:'#e4f0fb',border:'#90c4e8',plans:['Unique']},
+};
+// ── TARIFS dynamiques (éditables via ⚙️ Config sans toucher au code) ──
+function getPrices(){return DB.config.prices||{hexaship:{Basic:29,Grow:59,Advanced:99,Plus:199},survey:{Unique:19},panier:{Unique:29}};}
+function getPrice(app,plan){const p=getPrices();return(p[app]&&p[app][plan])||0;}
+// ── PRIME : montant fixe par client ayant 6 mois d'ancienneté ──
+function getPrimeAmount(){return DB.config.primeAmount!=null?DB.config.primeAmount:50;}
+const PIPELINE_STAGES = ['Prospection','Premier contact','Démo','Proposition','Négociation','Signé','Perdu'];
+const STAGE_COLORS = {Prospection:'#7a8aaa','Premier contact':'#5588cc',Démo:'#c09020',Proposition:'#d07020',Négociation:'#b05010',Signé:'#1a7a4a',Perdu:'#b03030'};
+const STATUS_STYLES = {Actif:{bg:'#e8f5ee',color:'#1a7a4a',border:'#b8e0cc'},Prospect:{bg:'#fef0e6',color:'#c06020',border:'#f0cca8'},Inactif:{bg:'#f4f3ef',color:'#a8a49e',border:'#dcdad5'},Client:{bg:'#e8eef8',color:'#1a50aa',border:'#b8ccf0'}};
+const PLAT_BADGE = {shopify:'<span class="plat-shopify">Shopify</span>',wix:'<span class="plat-wix">Wix</span>',both:'<span class="plat-both">Shopify + Wix</span>'};
+
+function emptyAppSubs(){return {hexaship:{Basic:0,Grow:0,Advanced:0,Plus:0},survey:{Unique:0},panier:{Unique:0}};}
+
+let DB = {
+  agences:[
+    {id:1,name:'Agence Pixel',contact:'Julie Bernard',email:'julie@agencepixel.fr',phone:'06 11 22 33 44',platform:'shopify',status:'Prospect',ca:250000,employees:8,apps:['hexaship'],appSubs:{hexaship:{Basic:3,Grow:2,Advanced:1,Plus:0},survey:{Unique:0},panier:{Unique:0}},notes:'Spécialisée mode & lifestyle. Très intéressée par Hexaship.',history:[{date:'2026-04-20',text:'Premier contact par email — intérêt confirmé pour Hexaship'},{date:'2026-04-15',text:'Découverte via LinkedIn'}],lastContact:'2026-04-20',tags:'Chaud,Mode'},
+    {id:2,name:'WebCraft Studio',contact:'Arnaud Morel',email:'arnaud@webcraft.fr',phone:'07 55 66 77 88',platform:'wix',status:'Client',ca:180000,employees:5,apps:['survey','panier'],appSubs:{hexaship:{Basic:0,Grow:0,Advanced:0,Plus:0},survey:{Unique:4},panier:{Unique:2}},notes:'Agence Wix pure. Utilise déjà Survey et Abandon Panier.',history:[{date:'2026-04-18',text:'Renouvellement contrat Survey App — +2 clients'},{date:'2026-03-10',text:'Démo Abandon Panier — très convaincus'},{date:'2026-02-20',text:'Signature contrat initial Survey App'}],lastContact:'2026-04-18',tags:'VIP,Wix'},
+    {id:3,name:'Novastyle Agency',contact:'Clara Dupont',email:'clara@novastyle.agency',phone:'06 99 88 77 66',platform:'both',status:'Prospect',ca:420000,employees:15,apps:[],appSubs:emptyAppSubs(),notes:'Grande agence mixte Shopify+Wix. Potentiel fort sur les 3 apps.',history:[{date:'2026-04-19',text:'Démo planifiée pour le 30/04'}],lastContact:'2026-04-19',tags:'Grands comptes,Chaud'},
+  ],
+  deals:[
+    {id:1,title:'Hexaship — Agence Pixel',agenceId:1,app:'hexaship',value:1200,stage:'Démo',probability:60,closeDate:'2026-05-20',notes:'Démo prévue'},
+    {id:2,title:'Survey + Panier — Novastyle',agenceId:3,app:'survey',value:3500,stage:'Proposition',probability:45,closeDate:'2026-06-01',notes:'Toutes apps à proposer'},
+    {id:3,title:'Renouvellement WebCraft',agenceId:2,app:'panier',value:2400,stage:'Signé',probability:100,closeDate:'2026-04-18',notes:'Signé !'},
+  ],
+  rdvs:[
+    {id:1,type:'Démo',agenceId:1,contact:'Julie Bernard',date:'2026-04-30',heure:'14:00',note:'Démo Hexaship — préparer cas logistique mode',done:false,exportCal:false},
+    {id:2,type:'Réunion',agenceId:3,contact:'Clara Dupont',date:'2026-05-03',heure:'10:00',note:'Présentation des 3 apps — Novastyle',done:false,exportCal:false},
+    {id:3,type:'Appel',agenceId:2,contact:'Arnaud Morel',date:'2026-04-22',heure:'11:00',note:'Point renouvellement WebCraft',done:true,exportCal:false},
+  ],
+  config:{airtableToken:'',airtableBaseId:'',tableAgences:'Agences',tableDeals:'Pipeline',tableRdvs:'RDV'}
+};
+
+let currentPage='dashboard',searchQ='',filterPlat='all',filterStatus='all';
+
+// ── Helpers ──
+const fmt=n=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);
+const fmtDate=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR'):'—';
+const nextId=arr=>arr.length?Math.max(...arr.map(x=>x.id))+1:1;
+const AVC=['#1c3a5e','#2a6050','#5a3060','#6a4020','#204060','#3a4a20','#602020'];
+const avColor=n=>AVC[n.charCodeAt(0)%AVC.length];
+const inits=n=>n.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+const ava=(n,s=34)=>`<div class="avatar" style="width:${s}px;height:${s}px;font-size:${s*.36}px;background:${avColor(n)}">${inits(n)}</div>`;
+const badgeSt=(t,st)=>`<span class="badge" style="background:${st.bg};color:${st.color};border:1px solid ${st.border}">${t}</span>`;
+const stageBdg=s=>{const c=STAGE_COLORS[s]||'#888';return `<span class="badge" style="background:${c}18;color:${c};border:1px solid ${c}30">${s}</span>`;};
+const appBdg=k=>{const a=APPS[k];if(!a)return '';return `<span class="badge" style="background:${a.bg};color:${a.color};border:1px solid ${a.border}">${a.name}</span>`;};
+
+function toast(msg,ok=true){
+  const t=document.createElement('div');t.className='toast';t.style.background=ok?'var(--accent)':'var(--red)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800);
+}
+
+// ── NAV ──
+function showPage(p){
+  currentPage=p;
+  document.getElementById('detailPanel').classList.add('hidden');
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const titles={dashboard:'Tableau de bord',agences:'Agences',pipeline:'Pipeline commercial',rdv:'Rendez-vous',revenus:'Revenus apps',config:'Configuration'};
+  document.getElementById('pageTitle').textContent=titles[p]||'';
+  const tb=document.getElementById('topBtn');
+  const tbls={agences:'+ Nouvelle agence',pipeline:'+ Nouvelle affaire',rdv:'+ Nouveau RDV'};
+  if(tbls[p]){tb.textContent=tbls[p];tb.classList.remove('hidden');}else tb.classList.add('hidden');
+  // highlight nav
+  const kw={dashboard:'tableau',agences:'agence',pipeline:'pipeline',rdv:'rendez',revenus:'revenus',config:'configuration'};
+  document.querySelectorAll('.nav-item').forEach(el=>{if(kw[p]&&el.textContent.toLowerCase().includes(kw[p]))el.classList.add('active');});
+  render();
+}
+function topAction(){({agences:openAddAgence,pipeline:openAddDeal,rdv:openAddRdv}[currentPage]||function(){})();}
+
+function render(){
+  document.getElementById('sidebarCount').textContent=DB.agences.length+' agence'+(DB.agences.length>1?'s':'');
+  // Supabase status is managed by updateSyncStatus()
+  const el=document.getElementById('content');
+  if(currentPage==='dashboard')el.innerHTML=renderDashboard();
+  else if(currentPage==='agences')el.innerHTML=renderAgences();
+  else if(currentPage==='pipeline')el.innerHTML=renderPipeline();
+  else if(currentPage==='rdv')el.innerHTML=renderRdv();
+  else if(currentPage==='revenus')el.innerHTML=renderRevenus();
+  else if(currentPage==='config')el.innerHTML=renderConfig();
+}
+function saveAndRender(){saveToStorage();injectPrimeRdvs();render();}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const pipeline=DB.deals.filter(d=>d.stage!=='Perdu'&&d.stage!=='Signé').reduce((s,d)=>s+d.value,0);
+  const won=DB.deals.filter(d=>d.stage==='Signé').reduce((s,d)=>s+d.value,0);
+  const clients=DB.agences.filter(a=>a.status==='Client').length;
+  let totalSubs=0;
+  DB.agences.forEach(a=>{Object.values(a.appSubs||{}).forEach(pl=>Object.values(pl).forEach(n=>totalSubs+=n));});
+  const todoRdv=DB.rdvs.filter(r=>!r.done).length;
+  return `<div class="page">
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-icon">🏢</div><div class="stat-val">${DB.agences.length}</div><div class="stat-label">Agences suivies</div><div class="stat-sub">${clients} clients actifs</div></div>
+    <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-icon">💶</div><div class="stat-val">${fmt(won)}</div><div class="stat-label">Revenus signés</div><div class="stat-sub">MRR actuel</div></div>
+    <div class="stat-card" style="border-top-color:var(--orange)"><div class="stat-icon">▦</div><div class="stat-val">${fmt(pipeline)}</div><div class="stat-label">Pipeline actif</div><div class="stat-sub">${DB.deals.filter(d=>d.stage!=='Perdu'&&d.stage!=='Signé').length} affaires en cours</div></div>
+    <div class="stat-card" style="border-top-color:var(--gold)"><div class="stat-icon">📲</div><div class="stat-val">${totalSubs}</div><div class="stat-label">Abonnements apps</div><div class="stat-sub">${todoRdv} RDV à venir</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card"><div class="card-title">Agences récentes</div>
+      ${DB.agences.slice(0,5).map(a=>`<div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;cursor:pointer" onclick="openAgence(${a.id})">${ava(a.name,32)}<div style="flex:1"><div style="font-weight:600;font-size:13px">${a.name}</div><div style="font-size:11px;color:var(--text3)">${a.contact}</div></div>${PLAT_BADGE[a.platform]||''} ${badgeSt(a.status,STATUS_STYLES[a.status]||STATUS_STYLES.Prospect)}</div>`).join('')}
+    </div>
+    <div class="card"><div class="card-title">Prochains RDV</div>
+      ${DB.rdvs.filter(r=>!r.done).slice(0,5).map(r=>{const ag=DB.agences.find(a=>a.id===r.agenceId);return `<div style="display:flex;gap:10px;margin-bottom:11px"><span style="font-size:16px">📅</span><div style="flex:1"><div style="font-size:13px;font-weight:600">${r.note}</div><div style="font-size:11px;color:var(--text3)">${ag?ag.name:'—'} · ${fmtDate(r.date)} ${r.heure?'à '+r.heure:''}</div></div><span class="badge" style="background:var(--accent-lt);color:var(--accent);border:1px solid #c0d4f0;font-size:10px">${r.type}</span></div>`;}).join('')||'<div style="color:var(--text3);font-size:13px">Aucun RDV à venir</div>'}
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Pipeline par étape</div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap">
+      ${PIPELINE_STAGES.map(s=>{const sd=DB.deals.filter(d=>d.stage===s);const tot=sd.reduce((x,d)=>x+d.value,0);const c=STAGE_COLORS[s];return `<div style="flex:1;min-width:95px;background:var(--surface2);border-radius:var(--radius);padding:12px 10px;border-top:3px solid ${c}"><div style="font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">${s}</div><div style="font-family:'Playfair Display',serif;font-size:17px;color:var(--accent)">${fmt(tot)}</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${sd.length} aff.</div></div>`;}).join('')}
+    </div>
+  </div>
+</div>`;
+}
+
+// ── PRIMES ──
+// Calcule toutes les primes dues : agences avec clients ayant >= 6 mois d'abonnement
+function computePrimes(){
+  const today=new Date();
+  const primes=[];
+  DB.agences.forEach(ag=>{
+    if(!ag.appSubsDates)return;
+    Object.entries(ag.appSubsDates).forEach(([appKey,plans])=>{
+      Object.entries(plans).forEach(([plan,dateStr])=>{
+        if(!dateStr)return;
+        const start=new Date(dateStr);
+        const months=(today.getFullYear()-start.getFullYear())*12+(today.getMonth()-start.getMonth());
+        const count=(ag.appSubs&&ag.appSubs[appKey]&&ag.appSubs[appKey][plan])||0;
+        if(count>0&&months>=6){
+          // Check if prime already acknowledged
+          const primeKey=`prime_${ag.id}_${appKey}_${plan}`;
+          const alreadyDone=(DB.primesDone||[]).includes(primeKey);
+          primes.push({agenceId:ag.id,agenceName:ag.name,appKey,appName:APPS[appKey]?APPS[appKey].name:appKey,plan,count,months,dateStr,amount:getPrimeAmount()*count,primeKey,alreadyDone});
+        }
+      });
+    });
+  });
+  return primes;
+}
+
+function renderPrimeAlerts(){
+  const primes=computePrimes().filter(p=>!p.alreadyDone);
+  if(!primes.length)return '';
+  return `<div class="card" style="border:2px solid #c09020;background:#fffdf0">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="font-size:20px">🏆</span>
+      <div style="font-family:'Playfair Display',serif;font-size:15px;color:#8a6010;font-weight:600">Primes agences à verser — ${primes.length} rappel${primes.length>1?'s':''}</div>
+    </div>
+    ${primes.map(p=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0e0a0">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${p.agenceName}</div>
+        <div style="font-size:11.5px;color:var(--text2)">${p.appName} · Plan ${p.plan} · ${p.count} client${p.count>1?'s':''} · ${p.months} mois d&#39;utilisation</div>
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:17px;color:#8a6010;font-weight:700">${fmt(p.amount)}</div>
+      <button class="btn btn-sm" style="background:#fdf4e7;color:#8a6010;border:1px solid #e0c070" onclick="markPrimeDone('${p.primeKey}')">✓ Versée</button>
+    </div>`).join('')}
+    <div style="font-size:11px;color:#a08030;margin-top:10px">Prime de ${fmt(getPrimeAmount())} par client ayant atteint 6 mois · Montant modifiable dans ⚙️ Config</div>
+  </div>`;
+}
+
+function markPrimeDone(key){
+  if(!DB.primesDone)DB.primesDone=[];
+  if(!DB.primesDone.includes(key))DB.primesDone.push(key);
+  saveAndRender();toast('Prime marquée comme versée ✓');
+}
+
+// Injecte les rappels de prime dans les RDV automatiquement
+function injectPrimeRdvs(){
+  const primes=computePrimes().filter(p=>!p.alreadyDone);
+  primes.forEach(p=>{
+    const existingNote=`🏆 PRIME à verser : ${p.agenceName} — ${p.appName} Plan ${p.plan}`;
+    const alreadyInRdv=DB.rdvs.some(r=>r.note===existingNote&&!r.done);
+    if(!alreadyInRdv){
+      DB.rdvs.unshift({id:nextId(DB.rdvs),type:'Prime',agenceId:p.agenceId,contact:'',note:existingNote,date:new Date().toISOString().slice(0,10),heure:'',done:false,exportCal:false,isPrime:true});
+    }
+  });
+}
+
+// ── AGENCES ──
+function renderAgences(){
+  let filtered=DB.agences.filter(a=>{
+    const q=(searchQ||'').toLowerCase();
+    const ms=!q||[a.name,a.contact,a.email].some(v=>v&&v.toLowerCase().includes(q));
+    return ms&&(filterPlat==='all'||a.platform===filterPlat)&&(filterStatus==='all'||a.status===filterStatus);
+  });
+  return `<div class="page">
+  <div class="toolbar">
+    <input class="search-input" placeholder="🔍 Rechercher une agence…" value="${searchQ}" oninput="searchQ=this.value;render()">
+    <select class="filter-select" onchange="filterPlat=this.value;render()">
+      <option value="all">Toutes plateformes</option>
+      <option value="shopify" ${filterPlat==='shopify'?'selected':''}>Shopify</option>
+      <option value="wix" ${filterPlat==='wix'?'selected':''}>Wix</option>
+      <option value="both" ${filterPlat==='both'?'selected':''}>Shopify + Wix</option>
+    </select>
+    <select class="filter-select" onchange="filterStatus=this.value;render()">
+      <option value="all">Tous statuts</option>
+      ${Object.keys(STATUS_STYLES).map(s=>`<option ${filterStatus===s?'selected':''}>${s}</option>`).join('')}
+    </select>
+    <button class="btn btn-primary" onclick="openAddAgence()">+ Nouvelle agence</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden"><div class="table-wrap"><table>
+    <thead><tr><th>Agence</th><th>Plateforme</th><th>Statut</th><th>Apps actives</th><th>CA estimé</th><th>Dernier contact</th><th></th></tr></thead>
+    <tbody>${filtered.length===0?`<tr><td colspan="7" class="empty-state">Aucune agence trouvée</td></tr>`:filtered.map(a=>`
+      <tr style="cursor:pointer" onclick="openAgence(${a.id})">
+        <td><div style="display:flex;align-items:center;gap:10px">${ava(a.name,30)}<div><div style="font-weight:600;font-size:13px">${a.name}</div><div style="font-size:11px;color:var(--text3)">${a.contact}</div></div></div></td>
+        <td>${PLAT_BADGE[a.platform]||''}</td>
+        <td>${badgeSt(a.status,STATUS_STYLES[a.status]||STATUS_STYLES.Prospect)}</td>
+        <td>${(a.apps||[]).map(k=>appBdg(k)).join(' ')}</td>
+        <td><strong style="font-family:'Playfair Display',serif;font-size:14px;color:var(--accent)">${fmt(a.ca||0)}</strong></td>
+        <td style="color:var(--text3);font-size:12px">${fmtDate(a.lastContact)}</td>
+        <td style="white-space:nowrap"><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();openEditAgence(${a.id})">✏️</button> <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteAgence(${a.id})">✕</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div></div></div>`;
+}
+
+function openAgence(id){
+  const a=DB.agences.find(x=>x.id===id);if(!a)return;
+  const panel=document.getElementById('detailPanel');panel.classList.remove('hidden');
+  const aDeals=DB.deals.filter(d=>d.agenceId===a.id);
+  const subsSummary=Object.entries(a.appSubs||{}).map(([key,plans])=>{
+    const app=APPS[key];if(!app)return '';
+    const total=Object.values(plans).reduce((s,n)=>s+n,0);if(!total)return '';
+    const startDates=a.appSubsDates&&a.appSubsDates[key]||{};
+    const today=new Date();
+    return `<div class="app-box"><div class="app-box-name">${app.name}</div>${Object.entries(plans).filter(([,n])=>n>0).map(([pl,n])=>{
+      const price=getPrice(key,pl);
+      const sd=startDates[pl];
+      const months=sd?Math.floor((today-new Date(sd))/(1000*60*60*24*30)):null;
+      const prime=months!=null&&months>=6?` <span style="font-size:9px;background:#fdf4e7;color:#8a6010;border-radius:99px;padding:1px 6px;border:1px solid #e0c070">🏆 ${months}m</span>`:'';
+      return `<div class="app-plan-row"><span class="app-plan-label">${pl}${prime}</span><span class="app-plan-count" title="${price}€/client/mois">${n} · ${fmt(n*price)}/m</span></div>`;
+    }).join('')}</div>`;
+  }).join('');
+  panel.innerHTML=`
+    <div class="detail-header"><span style="font-family:'Playfair Display',serif;font-size:16px;color:var(--accent);font-weight:600">Fiche agence</span><button class="close-btn" onclick="document.getElementById('detailPanel').classList.add('hidden')">✕</button></div>
+    <div style="text-align:center;margin-bottom:16px">${ava(a.name,56)}<div style="font-weight:700;font-size:16px;margin-top:9px">${a.name}</div><div style="color:var(--text2);font-size:12.5px;margin-bottom:7px">${a.contact} · ${a.email}</div><div style="display:flex;justify-content:center;gap:6px">${PLAT_BADGE[a.platform]||''} ${badgeSt(a.status,STATUS_STYLES[a.status]||STATUS_STYLES.Prospect)}</div></div>
+    ${[['Téléphone',a.phone||'—'],['CA estimé',fmt(a.ca||0)],['Collaborateurs',a.employees||'—'],['Dernier contact',fmtDate(a.lastContact)]].map(([k,v])=>`<div class="detail-field"><div class="detail-field-label">${k}</div><div class="detail-field-value">${v}</div></div>`).join('')}
+    ${a.tags?`<div class="detail-field"><div class="detail-field-label">Tags</div><div style="margin-top:4px">${a.tags.split(',').filter(Boolean).map(t=>`<span class="tag-pill">${t.trim()}</span>`).join('')}</div></div>`:''}
+    ${a.notes?`<div class="detail-field"><div class="detail-field-label">Notes</div><div class="detail-field-value" style="white-space:pre-wrap;font-size:12.5px">${a.notes}</div></div>`:''}
+    ${subsSummary?`<div style="margin-top:14px"><div style="font-family:'Playfair Display',serif;font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:600">Abonnements apps</div><div class="app-grid">${subsSummary}</div></div>`:''}
+    ${aDeals.length?`<div style="margin-top:16px"><div style="font-family:'Playfair Display',serif;font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:600">Affaires en cours</div>${aDeals.map(d=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:7px"><div style="font-weight:600;font-size:12.5px;margin-bottom:5px">${d.title}</div><div style="display:flex;justify-content:space-between">${stageBdg(d.stage)}<span style="font-family:'Playfair Display',serif;font-size:15px;color:var(--accent)">${fmt(d.value)}</span></div></div>`).join('')}</div>`:''}
+    <div style="margin-top:14px"><div style="font-family:'Playfair Display',serif;font-size:13px;color:var(--accent);margin-bottom:8px;font-weight:600">Historique des échanges</div>
+      ${[...(a.history||[])].reverse().map(h=>`<div class="history-item"><div class="history-dot"></div><div><div class="history-text">${h.text}</div><div class="history-date">${fmtDate(h.date)}</div></div></div>`).join('')}
+      <div style="display:flex;gap:8px;margin-top:10px"><input id="newHistText" class="form-input" placeholder="Ajouter un échange…" style="font-size:12px;padding:7px 11px"><button class="btn btn-primary btn-sm" onclick="addHistory(${a.id})">+</button></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-secondary" onclick="openEditAgence(${a.id})">✏️ Modifier</button>
+      <button class="btn btn-sm btn-primary" onclick="openAddRdvFor(${a.id})">📅 Nouveau RDV</button>
+      <button class="btn btn-sm btn-green" onclick="openAddDealFor(${a.id})">+ Affaire</button>
+    </div>`;
+}
+
+function addHistory(agId){
+  const txt=document.getElementById('newHistText').value.trim();if(!txt)return;
+  const a=DB.agences.find(x=>x.id===agId);if(!a)return;
+  if(!a.history)a.history=[];
+  a.history.push({date:new Date().toISOString().slice(0,10),text:txt});
+  a.lastContact=new Date().toISOString().slice(0,10);
+  saveAndRender();openAgence(agId);toast('Échange ajouté ✓');
+}
+
+function deleteAgence(id){
+  if(!confirm('Supprimer cette agence ?'))return;
+  DB.agences=DB.agences.filter(a=>a.id!==id);
+  document.getElementById('detailPanel').classList.add('hidden');
+  saveAndRender();toast('Agence supprimée');
+}
+
+function agenceForm(a=null){
+  const v=(f,def='')=>a?(a[f]!==undefined?a[f]:def):def;
+  const ck=app=>a&&(a.apps||[]).includes(app)?'checked':'';
+  const sv=(app,plan)=>a&&a.appSubs&&a.appSubs[app]?a.appSubs[app][plan]||0:0;
+  const svd=(app,plan)=>a&&a.appSubsDates&&a.appSubsDates[app]?a.appSubsDates[app][plan]||'':'';
+  return `<div class="modal">
+    <div class="modal-title">${a?'Modifier l\'agence':'Nouvelle agence'}</div>
+    <div class="form-section">Informations générales</div>
+    <div class="two-col">
+      <div class="form-row"><label class="form-label">Nom agence *</label><input class="form-input" id="ag_n" value="${v('name')}"></div>
+      <div class="form-row"><label class="form-label">Contact principal</label><input class="form-input" id="ag_ct" value="${v('contact')}"></div>
+    </div>
+    <div class="two-col">
+      <div class="form-row"><label class="form-label">Email</label><input class="form-input" id="ag_e" type="email" value="${v('email')}"></div>
+      <div class="form-row"><label class="form-label">Téléphone</label><input class="form-input" id="ag_ph" value="${v('phone')}"></div>
+    </div>
+    <div class="three-col">
+      <div class="form-row"><label class="form-label">Plateforme</label><select class="form-select" id="ag_pl"><option value="shopify" ${v('platform')==='shopify'?'selected':''}>Shopify</option><option value="wix" ${v('platform')==='wix'?'selected':''}>Wix</option><option value="both" ${v('platform')==='both'?'selected':''}>Shopify + Wix</option></select></div>
+      <div class="form-row"><label class="form-label">Statut</label><select class="form-select" id="ag_st">${Object.keys(STATUS_STYLES).map(s=>`<option ${v('status')===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-row"><label class="form-label">CA estimé (€)</label><input class="form-input" id="ag_ca" type="number" value="${v('ca',0)}"></div>
+    </div>
+    <div class="two-col">
+      <div class="form-row"><label class="form-label">Nb collaborateurs</label><input class="form-input" id="ag_em" type="number" value="${v('employees','')}"></div>
+      <div class="form-row"><label class="form-label">Tags</label><input class="form-input" id="ag_tg" value="${v('tags','')}" placeholder="VIP, Chaud…"></div>
+    </div>
+    <div class="form-row"><label class="form-label">Notes</label><textarea class="form-textarea" id="ag_nt">${v('notes','')}</textarea></div>
+    <div class="form-section">Apps &amp; abonnements clients</div>
+    <div style="background:var(--shopify-bg);border:1px solid var(--shopify-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><input type="checkbox" id="ck_hexaship" ${ck('hexaship')} style="accent-color:#4a7010"><label for="ck_hexaship" style="font-weight:700;font-size:13px;color:#4a7010;cursor:pointer">Hexaship <span style="font-weight:400;color:var(--text3)">(Shopify · Logistique)</span></label></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:7px">Nombre de clients par plan + date de démarrage :</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${['Basic','Grow','Advanced','Plus'].map(p=>`<div><label class="form-label" style="margin-bottom:3px">${p} (${getPrice('hexaship',p)}€/mois)</label><input class="form-input" id="hs_${p}" type="number" min="0" value="${sv('hexaship',p)}" style="padding:6px 10px;margin-bottom:4px"><input class="form-input" id="hs_d_${p}" type="date" value="${svd('hexaship',p)}" style="padding:5px 8px;font-size:11px" title="Date de démarrage du 1er client ${p}"></div>`).join('')}</div>
+    </div>
+    <div style="background:var(--wix-bg);border:1px solid var(--wix-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><input type="checkbox" id="ck_survey" ${ck('survey')} style="accent-color:#0c6ebd"><label for="ck_survey" style="font-weight:700;font-size:13px;color:#0c6ebd;cursor:pointer">Survey App <span style="font-weight:400;color:var(--text3)">(Wix · Sondages)</span></label></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:320px"><div><label class="form-label" style="margin-bottom:3px">Nb clients (${getPrice('survey','Unique')}€/mois)</label><input class="form-input" id="sv_U" type="number" min="0" value="${sv('survey','Unique')}" style="padding:6px 10px"></div><div><label class="form-label" style="margin-bottom:3px">Date démarrage</label><input class="form-input" id="sv_d_U" type="date" value="${svd('survey','Unique')}" style="padding:5px 8px;font-size:11px"></div></div>
+    </div>
+    <div style="background:var(--wix-bg);border:1px solid var(--wix-border);border-radius:var(--radius-sm);padding:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><input type="checkbox" id="ck_panier" ${ck('panier')} style="accent-color:#0c6ebd"><label for="ck_panier" style="font-weight:700;font-size:13px;color:#0c6ebd;cursor:pointer">Abandon Panier <span style="font-weight:400;color:var(--text3)">(Wix · Récupération paniers)</span></label></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:320px"><div><label class="form-label" style="margin-bottom:3px">Nb clients (${getPrice('panier','Unique')}€/mois)</label><input class="form-input" id="pn_U" type="number" min="0" value="${sv('panier','Unique')}" style="padding:6px 10px"></div><div><label class="form-label" style="margin-bottom:3px">Date démarrage</label><input class="form-input" id="pn_d_U" type="date" value="${svd('panier','Unique')}" style="padding:5px 8px;font-size:11px"></div></div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Annuler</button><button class="btn btn-primary" onclick="${a?`saveEditAgence(${a.id})`:'saveAgence()'}">${a?'Enregistrer':'Créer'}</button></div>
+  </div>`;
+}
+
+function openAddAgence(){openModal(agenceForm());}
+function openEditAgence(id){const a=DB.agences.find(x=>x.id===id);if(a)openModal(agenceForm(a));}
+
+function readAgenceForm(existing=null){
+  const apps=[],appSubs=emptyAppSubs();
+  const appSubsDates={hexaship:{Basic:'',Grow:'',Advanced:'',Plus:''},survey:{Unique:''},panier:{Unique:''}};
+  if(document.getElementById('ck_hexaship').checked){apps.push('hexaship');['Basic','Grow','Advanced','Plus'].forEach(p=>{appSubs.hexaship[p]=parseInt(document.getElementById('hs_'+p).value)||0;appSubsDates.hexaship[p]=document.getElementById('hs_d_'+p).value||'';});}
+  if(document.getElementById('ck_survey').checked){apps.push('survey');appSubs.survey.Unique=parseInt(document.getElementById('sv_U').value)||0;appSubsDates.survey.Unique=document.getElementById('sv_d_U').value||'';}
+  if(document.getElementById('ck_panier').checked){apps.push('panier');appSubs.panier.Unique=parseInt(document.getElementById('pn_U').value)||0;appSubsDates.panier.Unique=document.getElementById('pn_d_U').value||'';}
+  return {name:document.getElementById('ag_n').value.trim(),contact:document.getElementById('ag_ct').value.trim(),email:document.getElementById('ag_e').value.trim(),phone:document.getElementById('ag_ph').value.trim(),platform:document.getElementById('ag_pl').value,status:document.getElementById('ag_st').value,ca:Number(document.getElementById('ag_ca').value)||0,employees:Number(document.getElementById('ag_em').value)||0,tags:document.getElementById('ag_tg').value.trim(),notes:document.getElementById('ag_nt').value.trim(),apps,appSubs,appSubsDates,lastContact:existing?existing.lastContact:new Date().toISOString().slice(0,10),history:existing?existing.history:[]};
+}
+
+function saveAgence(){
+  const o=readAgenceForm();if(!o.name){alert('Le nom est requis');return;}
+  o.id=nextId(DB.agences);o.history=[{date:new Date().toISOString().slice(0,10),text:'Agence créée dans le CRM'}];
+  DB.agences.unshift(o);closeModal();saveAndRender();toast('Agence créée ✓');
+}
+function saveEditAgence(id){
+  const ex=DB.agences.find(x=>x.id===id);const o=readAgenceForm(ex);if(!o.name){alert('Nom requis');return;}
+  Object.assign(ex,o);closeModal();saveAndRender();toast('Agence mise à jour ✓');
+}
+
+// ── PIPELINE ──
+function renderPipeline(){
+  return `<div class="page">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn btn-primary" onclick="openAddDeal()">+ Nouvelle affaire</button></div>
+  <div class="kanban">
+    ${PIPELINE_STAGES.map(stage=>{
+      const sd=DB.deals.filter(d=>d.stage===stage);const tot=sd.reduce((s,d)=>s+d.value,0);const c=STAGE_COLORS[stage];
+      return `<div class="kanban-col"><div class="kanban-col-header"><div class="kanban-dot" style="background:${c}"></div><span class="kanban-col-label">${stage}</span><span class="kanban-col-total">${fmt(tot)}</span></div>
+        ${sd.map(d=>{const ag=DB.agences.find(a=>a.id===d.agenceId);return `<div class="deal-card" style="border-left-color:${c}">
+          <div class="deal-card-title">${d.title}</div>
+          ${ag?`<div class="deal-card-meta">${ava(ag.name,18)}<span>${ag.name}</span></div>`:''}
+          ${d.app?`<div style="margin-bottom:6px">${appBdg(d.app)}</div>`:''}
+          <div style="display:flex;justify-content:space-between"><span style="font-family:'Playfair Display',serif;font-size:16px;color:var(--accent)">${fmt(d.value)}</span><span style="font-size:11px;color:var(--text3)">${d.probability}%</span></div>
+          <div class="prob-bar"><div class="prob-fill" style="width:${d.probability}%;background:${c}"></div></div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:5px">Clôture : ${fmtDate(d.closeDate)}</div>
+          <div style="margin-top:8px;display:flex;gap:5px"><button class="btn btn-sm btn-secondary" onclick="openEditDeal(${d.id})">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteDeal(${d.id})">✕</button></div>
+        </div>`;}).join('')}
+      </div>`;}).join('')}
+  </div></div>`;
+}
+
+function deleteDeal(id){if(!confirm('Supprimer ?'))return;DB.deals=DB.deals.filter(d=>d.id!==id);saveAndRender();toast('Affaire supprimée');}
+
+function dealForm(d=null){
+  const v=(f,def='')=>d?(d[f]!==undefined?d[f]:def):def;
+  return `<div class="modal"><div class="modal-title">${d?'Modifier':'Nouvelle affaire'}</div>
+    <div class="form-row"><label class="form-label">Titre *</label><input class="form-input" id="d_t" value="${v('title')}"></div>
+    <div class="two-col">
+      <div class="form-row"><label class="form-label">Agence</label><select class="form-select" id="d_ag"><option value="">—</option>${DB.agences.map(a=>`<option value="${a.id}" ${d&&d.agenceId===a.id?'selected':''}>${a.name}</option>`).join('')}</select></div>
+      <div class="form-row"><label class="form-label">App concernée</label><select class="form-select" id="d_ap">${Object.entries(APPS).map(([k,a])=>`<option value="${k}" ${d&&d.app===k?'selected':''}>${a.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="two-col">
+      <div class="form-row"><label class="form-label">Valeur annuelle (€)</label><input class="form-input" id="d_v" type="number" value="${v('value',0)}"></div>
+      <div class="form-row"><label class="form-label">Étape</label><select class="form-select" id="d_s">${PIPELINE_STAGES.map(s=>`<option ${d&&d.stage===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    </div>
+    <div class="two-col">
+      <div class="form-row"><label class="form-label">Probabilité (%)</label><input class="form-input" id="d_p" type="number" value="${v('probability',30)}"></div>
+      <div class="form-row"><label class="form-label">Date clôture</label><input class="form-input" id="d_d" type="date" value="${v('closeDate','')}"></div>
+    </div>
+    <div class="form-row"><label class="form-label">Notes</label><textarea class="form-textarea" id="d_n">${v('notes','')}</textarea></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Annuler</button><button class="btn btn-primary" onclick="${d?`updateDeal(${d.id})`:'saveDeal()'}">${d?'Enregistrer':'Créer'}</button></div>
+  </div>`;
+}
+
+function openAddDeal(){openModal(dealForm());}
+function openAddDealFor(agId){openModal(dealForm());setTimeout(()=>{const s=document.getElementById('d_ag');if(s)s.value=agId;},50);}
+function openEditDeal(id){const d=DB.deals.find(x=>x.id===id);if(d)openModal(dealForm(d));}
+
+function saveDeal(){
+  const title=document.getElementById('d_t').value.trim();if(!title){alert('Titre requis');return;}
+  DB.deals.unshift({id:nextId(DB.deals),title,agenceId:Number(document.getElementById('d_ag').value)||null,app:document.getElementById('d_ap').value,value:Number(document.getElementById('d_v').value)||0,stage:document.getElementById('d_s').value,probability:Number(document.getElementById('d_p').value)||0,closeDate:document.getElementById('d_d').value,notes:document.getElementById('d_n').value.trim()});
+  closeModal();saveAndRender();toast('Affaire créée ✓');
+}
+function updateDeal(id){
+  const d=DB.deals.find(x=>x.id===id);if(!d)return;
+  d.title=document.getElementById('d_t').value.trim();d.agenceId=Number(document.getElementById('d_ag').value)||null;d.app=document.getElementById('d_ap').value;d.value=Number(document.getElementById('d_v').value)||0;d.stage=document.getElementById('d_s').value;d.probability=Number(document.getElementById('d_p').value)||0;d.closeDate=document.getElementById('d_d').value;d.notes=document.getElementById('d_n').value.trim();
+  closeModal();saveAndRender();toast('Affaire mise à jour ✓');
+}
+
+// ── RDV ──
+function renderRdv(){
+  const upcoming=DB.rdvs.filter(r=>!r.done).sort((a,b)=>a.date>b.date?1:-1);
+  const done=DB.rdvs.filter(r=>r.done);
+  const sel=DB.rdvs.filter(r=>r.exportCal).length;
+  return `<div class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:12px;color:var(--text2)">${sel} RDV sélectionné${sel>1?'s':''} pour export</span>
+      <button class="btn btn-sm btn-ics" onclick="exportSelectedICS()">📆 Exporter vers Google Agenda</button>
+    </div>
+    <button class="btn btn-primary" onclick="openAddRdv()">+ Nouveau RDV</button>
+  </div>
+  <div class="card"><div class="card-title">À venir</div>
+    ${upcoming.length===0?'<div class="empty-state">Aucun RDV à venir</div>':upcoming.map(r=>{
+      const ag=DB.agences.find(a=>a.id===r.agenceId);
+      return `<div class="rdv-item">
+        <input type="checkbox" class="rdv-check" title="Sélectionner pour Google Agenda" ${r.exportCal?'checked':''} onchange="toggleExportCal(${r.id},this.checked)">
+        <span style="font-size:19px;margin-top:2px">📅</span>
+        <div style="flex:1"><div style="font-size:13px;font-weight:600;margin-bottom:3px">${r.note}</div><div style="font-size:11px;color:var(--text3)">${ag?ag.name:'—'} · ${r.type} · ${fmtDate(r.date)}${r.heure?' à '+r.heure:''}</div></div>
+        <div class="rdv-actions">
+          <span class="badge" style="${r.isPrime?'background:#fdf4e7;color:#8a6010;border:1px solid #e0c070':'background:var(--accent-lt);color:var(--accent);border:1px solid #c0d4f0'};font-size:10px">${r.type}</span>
+          <button class="btn btn-sm btn-green" onclick="toggleRdvDone(${r.id})">✓ Fait</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteRdv(${r.id})">✕</button>
+        </div>
+      </div>`;}).join('')}
+  </div>
+  ${done.length?`<div class="card"><div class="card-title" style="color:var(--text3)">RDV passés</div>
+    ${done.map(r=>{const ag=DB.agences.find(a=>a.id===r.agenceId);return `<div class="rdv-item" style="opacity:.55"><span style="font-size:19px">✅</span><div style="flex:1"><div style="font-size:13px;text-decoration:line-through">${r.note}</div><div style="font-size:11px;color:var(--text3)">${ag?ag.name:'—'} · ${fmtDate(r.date)}</div></div><button class="btn btn-sm btn-danger" onclick="deleteRdv(${r.id})">✕</button></div>`;}).join('')}
+  </div>`:''}
+</div>`;
+}
+
+function toggleExportCal(id,val){const r=DB.rdvs.find(x=>x.id===id);if(r){r.exportCal=val;saveAndRender();}}
+function toggleRdvDone(id){const r=DB.rdvs.find(x=>x.id===id);if(r){r.done=true;r.exportCal=false;saveAndRender();toast('RDV marqué comme fait ✓');}}
+function deleteRdv(id){if(!confirm('Supprimer ce RDV ?'))return;DB.rdvs=DB.rdvs.filter(r=>r.id!==id);saveAndRender();toast('RDV supprimé');}
+
+function rdvForm(agId=null){
+  return `<div class="modal"><div class="modal-title">Nouveau rendez-vous</div>
+    <div class="two-col">
+      <div class="form-row"><label class="form-label">Type</label><select class="form-select" id="r_ty"><option>Démo</option><option>Réunion</option><option>Appel</option><option>Présentation</option><option>Suivi</option></select></div>
+      <div class="form-row"><label class="form-label">Agence</label><select class="form-select" id="r_ag"><option value="">—</option>${DB.agences.map(a=>`<option value="${a.id}" ${agId===a.id?'selected':''}>${a.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row"><label class="form-label">Contact rencontré</label><input class="form-input" id="r_co" placeholder="Nom du contact"></div>
+    <div class="form-row"><label class="form-label">Objet / Notes *</label><textarea class="form-textarea" id="r_no" placeholder="Objet du RDV, points à aborder…"></textarea></div>
+    <div class="two-col">
+      <div class="form-row"><label class="form-label">Date *</label><input class="form-input" id="r_dt" type="date"></div>
+      <div class="form-row"><label class="form-label">Heure</label><input class="form-input" id="r_he" type="time"></div>
+    </div>
+    <div class="form-row" style="display:flex;align-items:center;gap:10px;margin-top:4px">
+      <input type="checkbox" id="r_cal" style="accent-color:var(--accent);width:16px;height:16px">
+      <label for="r_cal" style="font-size:13px;cursor:pointer;color:var(--text2)">☑ Ajouter à ma sélection Google Agenda</label>
+    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Annuler</button><button class="btn btn-primary" onclick="saveRdv()">Créer le RDV</button></div>
+  </div>`;
+}
+
+function openAddRdv(){openModal(rdvForm());}
+function openAddRdvFor(agId){openModal(rdvForm(agId));}
+
+function saveRdv(){
+  const note=document.getElementById('r_no').value.trim(),date=document.getElementById('r_dt').value;
+  if(!note||!date){alert('Notes et date sont requis');return;}
+  const agId=Number(document.getElementById('r_ag').value)||null;
+  DB.rdvs.unshift({id:nextId(DB.rdvs),type:document.getElementById('r_ty').value,agenceId:agId,contact:document.getElementById('r_co').value.trim(),note,date,heure:document.getElementById('r_he').value,done:false,exportCal:document.getElementById('r_cal').checked});
+  if(agId){const ag=DB.agences.find(a=>a.id===agId);if(ag){if(!ag.history)ag.history=[];ag.history.push({date,text:`RDV planifié : ${document.getElementById('r_ty').value} — ${note}`});ag.lastContact=date;}}
+  closeModal();saveAndRender();toast('RDV créé ✓');
+}
+
+// ── REVENUS ──
+function renderRevenus(){
+  let rows='',grandTotal=0;
+  DB.agences.forEach(ag=>{
+    let agTotal=0;
+    const cells=Object.entries(APPS).map(([key])=>{
+      const subs=ag.appSubs&&ag.appSubs[key]?ag.appSubs[key]:{};
+      const count=Object.values(subs).reduce((s,n)=>s+n,0);
+      const rev=Object.entries(subs).reduce((s,[pl,n])=>s+(getPrice(key,pl)*n),0);
+      agTotal+=rev;
+      return `<td style="text-align:center"><span style="font-weight:600">${count}</span><br><span style="font-size:10px;color:var(--text3)">${count?fmt(rev)+'/mois':'—'}</span></td>`;
+    }).join('');
+    grandTotal+=agTotal;
+    rows+=`<tr><td><div style="display:flex;align-items:center;gap:9px">${ava(ag.name,26)}<div><div style="font-weight:600;font-size:12.5px">${ag.name}</div><div style="font-size:10px">${PLAT_BADGE[ag.platform]||''}</div></div></div></td>${cells}<td style="text-align:right"><strong class="rev-total">${fmt(agTotal)}<span style="font-size:10px;font-family:Inter;font-weight:500;color:var(--text3)">/mois</span></strong></td></tr>`;
+  });
+  const totCells=Object.keys(APPS).map(key=>{
+    const total=DB.agences.reduce((s,ag)=>s+Object.values(ag.appSubs&&ag.appSubs[key]?ag.appSubs[key]:{}).reduce((x,n)=>x+n,0),0);
+    const rev=DB.agences.reduce((s,ag)=>s+Object.entries(ag.appSubs&&ag.appSubs[key]?ag.appSubs[key]:{}).reduce((x,[pl,n])=>x+(getPrice(key,pl)*n),0),0);
+    return `<td style="text-align:center;background:var(--accent-lt)"><strong>${total}</strong><br><span style="font-size:10px;color:var(--accent)">${fmt(rev)}/mois</span></td>`;
+  }).join('');
+  return `<div class="page">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px">
+    ${Object.entries(APPS).map(([key,app])=>{
+      const totalSubs=DB.agences.reduce((s,ag)=>s+Object.values(ag.appSubs&&ag.appSubs[key]?ag.appSubs[key]:{}).reduce((x,n)=>x+n,0),0);
+      const rev=DB.agences.reduce((s,ag)=>s+Object.entries(ag.appSubs&&ag.appSubs[key]?ag.appSubs[key]:{}).reduce((x,[pl,n])=>x+(getPrice(key,pl)*n),0),0);
+      return `<div class="stat-card" style="border-top-color:${app.color}"><div style="font-size:11px;font-weight:700;color:${app.color};margin-bottom:6px">${app.name} · ${app.platform==='shopify'?'Shopify':'Wix'}</div><div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--accent)">${totalSubs} <span style="font-size:13px;font-family:Inter;color:var(--text3)">abonnements</span></div><div style="font-size:13px;font-weight:700;color:var(--green);margin-top:6px">${fmt(rev)}<span style="font-size:11px;font-weight:400;color:var(--text3)">/mois</span></div></div>`;}).join('')}
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:16px 20px 0;font-family:'Playfair Display',serif;font-size:15px;color:var(--accent);font-weight:600">Abonnements par agence</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Agence</th>${Object.values(APPS).map(a=>`<th style="text-align:center">${a.name}</th>`).join('')}<th style="text-align:right">Total MRR</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr style="background:var(--surface2)"><td style="font-weight:700;font-size:12px">TOTAL</td>${totCells}<td style="text-align:right"><strong class="rev-total" style="font-size:18px">${fmt(grandTotal)}<span style="font-size:10px;font-family:Inter;font-weight:500;color:var(--text3)">/mois</span></strong></td></tr></tfoot>
+    </table></div>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-top:8px">💡 Les tarifs et le montant de prime sont modifiables dans <strong>⚙️ Config</strong> sans toucher au code.</div>
+</div>`;
+}
+
+// ── CONFIG ──
+function renderConfig(){
+  const c=DB.config;
+  const p=getPrices();
+  return `<div class="page">
+  <div class="config-box">
+    <div class="config-title">🟢 Connexion Supabase — synchronisation temps réel</div>
+    <p style="font-size:12.5px;color:var(--text2);margin-bottom:10px;line-height:1.7">Votre CRM est connecté à Supabase. Toutes les modifications sont synchronisées en temps réel entre tous les membres de l&#39;équipe.</p>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div class="status-dot" id="cfgDot" style="width:10px;height:10px"></div>
+      <span id="cfgStatusTxt" style="font-size:13px;font-weight:600;color:var(--accent)">Vérification…</span>
+    </div>
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;font-size:12px;color:var(--text2);line-height:1.8">
+      <div>🔗 <strong>URL :</strong> https://pmynkoxjsswozccaozjc.supabase.co</div>
+      <div>👥 <strong>Utilisateurs :</strong> Partagez simplement l&#39;URL GitHub Pages à votre équipe</div>
+      <div>🔄 <strong>Sync :</strong> Automatique dès qu&#39;une modification est effectuée</div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="forceSyncSupabase()">🔄 Forcer la synchronisation</button>
+      <button class="btn btn-secondary" onclick="saveConfig()">💾 Enregistrer tarifs &amp; primes</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💶 Tarifs mensuels des apps</div>
+    <p style="font-size:12.5px;color:var(--text2);margin-bottom:14px">Modifiez les tarifs ici — ils seront mis à jour partout dans le CRM instantanément.</p>
+    <div style="background:var(--shopify-bg);border:1px solid var(--shopify-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+      <div style="font-weight:700;font-size:13px;color:var(--shopify);margin-bottom:10px">Hexaship — Shopify (€/mois par client)</div>
+      <div class="four-col">
+        ${['Basic','Grow','Advanced','Plus'].map(pl=>`<div class="form-row" style="margin-bottom:0"><label class="form-label">${pl}</label><div style="display:flex;align-items:center;gap:4px"><input class="config-input" id="price_hs_${pl}" type="number" min="0" value="${p.hexaship&&p.hexaship[pl]||0}" style="padding:6px 10px"><span style="font-size:12px;color:var(--text3)">€</span></div></div>`).join('')}
+      </div>
+    </div>
+    <div style="background:var(--wix-bg);border:1px solid var(--wix-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px">
+      <div style="font-weight:700;font-size:13px;color:var(--wix);margin-bottom:10px">Survey App — Wix (€/mois par client)</div>
+      <div style="max-width:200px"><div class="form-row" style="margin-bottom:0"><label class="form-label">Plan Unique</label><div style="display:flex;align-items:center;gap:4px"><input class="config-input" id="price_sv_U" type="number" min="0" value="${p.survey&&p.survey.Unique||0}" style="padding:6px 10px"><span style="font-size:12px;color:var(--text3)">€</span></div></div></div>
+    </div>
+    <div style="background:var(--wix-bg);border:1px solid var(--wix-border);border-radius:var(--radius-sm);padding:14px">
+      <div style="font-weight:700;font-size:13px;color:var(--wix);margin-bottom:10px">Abandon Panier — Wix (€/mois par client)</div>
+      <div style="max-width:200px"><div class="form-row" style="margin-bottom:0"><label class="form-label">Plan Unique</label><div style="display:flex;align-items:center;gap:4px"><input class="config-input" id="price_pn_U" type="number" min="0" value="${p.panier&&p.panier.Unique||0}" style="padding:6px 10px"><span style="font-size:12px;color:var(--text3)">€</span></div></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="border:1px solid #e0c070;background:#fffdf0">
+    <div class="card-title" style="color:#8a6010">🏆 Prime agences — récompense fidélité 6 mois</div>
+    <p style="font-size:12.5px;color:#a08030;margin-bottom:14px;line-height:1.6">Un rappel automatique est généré sur le tableau de bord et dans les RDV dès qu&#39;un client d&#39;une agence atteint 6 mois d&#39;utilisation.</p>
+    <div style="max-width:260px">
+      <div class="form-row"><label class="form-label">Montant prime par client (€)</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="config-input" id="cfg_prime" type="number" min="0" value="${getPrimeAmount()}" style="padding:8px 13px">
+          <span style="font-size:13px;color:var(--text2)">€ / client</span>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:11.5px;color:#a08030;margin-top:6px">Exemple : si une agence a 5 clients depuis 6 mois → prime = 5 × ${fmt(getPrimeAmount())}</p>
+    <div style="margin-top:10px">
+      <button class="btn btn-sm" style="background:#fdf4e7;color:#8a6010;border:1px solid #e0c070" onclick="resetPrimes()">🔄 Réinitialiser les primes versées</button>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-title">👥 Partager avec votre équipe</div>
+    <ol style="font-size:13px;color:var(--text2);line-height:2.2;padding-left:18px">
+      <li>Copiez l&#39;URL GitHub Pages de votre CRM</li>
+      <li>Envoyez-la à vos collègues par email ou message</li>
+      <li>Ils ouvrent le lien dans leur navigateur — c&#39;est tout ✅</li>
+      <li>Chaque modification est visible par tous en temps réel</li>
+      <li>Aucune installation requise — fonctionne sur Mac, PC, mobile</li>
+    </ol>
+  </div>
+</div>\`;
+}
+
+function saveConfig(){
+  // Save prices
+  const prices={
+    hexaship:{Basic:Number(document.getElementById('price_hs_Basic').value)||0,Grow:Number(document.getElementById('price_hs_Grow').value)||0,Advanced:Number(document.getElementById('price_hs_Advanced').value)||0,Plus:Number(document.getElementById('price_hs_Plus').value)||0},
+    survey:{Unique:Number(document.getElementById('price_sv_U').value)||0},
+    panier:{Unique:Number(document.getElementById('price_pn_U').value)||0}
+  };
+  DB.config.prices=prices;
+  DB.config.primeAmount=Number(document.getElementById('cfg_prime').value)||0;
+  saveAndRender();toast('Configuration sauvegardée ✓');
+}
+
+function resetPrimes(){
+  if(!confirm('Réinitialiser toutes les primes versées ? Les rappels réapparaîtront.'))return;
+  DB.primesDone=[];saveAndRender();toast('Primes réinitialisées');
+}
+
+// testAirtable remplacé par forceSyncSupabase
+
+// ── EXPORT EXCEL ──
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  const agRows=[['Agence','Contact','Email','Téléphone','Plateforme','Statut','CA estimé','Collaborateurs','Tags','Apps actives','Hexaship Basic','Hexaship Grow','Hexaship Advanced','Hexaship Plus','Survey Unique','Panier Unique','Dernier contact','Notes']];
+  DB.agences.forEach(a=>{const hs=a.appSubs&&a.appSubs.hexaship||{};const sv=a.appSubs&&a.appSubs.survey||{};const pn=a.appSubs&&a.appSubs.panier||{};agRows.push([a.name,a.contact,a.email,a.phone,a.platform,a.status,a.ca,a.employees,a.tags,(a.apps||[]).join(', '),hs.Basic||0,hs.Grow||0,hs.Advanced||0,hs.Plus||0,sv.Unique||0,pn.Unique||0,a.lastContact,a.notes]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(agRows),'Agences');
+  const dlRows=[['Titre','Agence','App','Valeur (€)','Étape','Probabilité %','Date clôture','Notes']];
+  DB.deals.forEach(d=>{const ag=DB.agences.find(x=>x.id===d.agenceId);dlRows.push([d.title,ag?ag.name:'',d.app,d.value,d.stage,d.probability,d.closeDate,d.notes]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dlRows),'Pipeline');
+  const rdvRows=[['Type','Agence','Contact','Date','Heure','Note','Statut']];
+  DB.rdvs.forEach(r=>{const ag=DB.agences.find(x=>x.id===r.agenceId);rdvRows.push([r.type,ag?ag.name:'',r.contact,r.date,r.heure,r.note,r.done?'Fait':'À venir']);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rdvRows),'RDV');
+  XLSX.writeFile(wb,'BANG_Solution_Trading_CRM.xlsx');toast('Export Excel téléchargé ✓');
+}
+
+// ── EXPORT ICS ──
+function exportSelectedICS(){
+  const sel=DB.rdvs.filter(r=>r.exportCal&&!r.done);
+  if(!sel.length){toast('☑ Cochez d\'abord des RDV à exporter',false);return;}
+  const pad=n=>String(n).padStart(2,'0');
+  function icsDate(d,h){const dt=new Date((d||'2026-01-01')+'T'+(h||'09:00')+':00');return `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;}
+  let ics=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//BANG Solution Trading//CRM//FR\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n`;
+  sel.forEach(r=>{
+    const ag=DB.agences.find(a=>a.id===r.agenceId);
+    const start=icsDate(r.date,r.heure);
+    const endH=r.heure?String(Number(r.heure.split(':')[0])+1).padStart(2,'0')+':'+r.heure.split(':')[1]:'10:00';
+    const end=icsDate(r.date,endH);
+    ics+=`BEGIN:VEVENT\r\nUID:bang-rdv-${r.id}-${Date.now()}@bang-solution-trading\r\nDTSTAMP:${icsDate(new Date().toISOString().slice(0,10),'00:00')}Z\r\nDTSTART:${start}\r\nDTEND:${end}\r\nSUMMARY:[${r.type}] ${r.note}\r\nDESCRIPTION:Agence : ${ag?ag.name:'—'}\\nContact : ${r.contact||'—'}\\nType : ${r.type}\r\nCATEGORIES:CRM,${r.type}\r\nEND:VEVENT\r\n`;
+  });
+  ics+=`END:VCALENDAR`;
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='BANG_RDV_Agenda.ics';a.click();URL.revokeObjectURL(url);
+  toast(`${sel.length} RDV exporté${sel.length>1?'s':''} → Google Agenda ✓`);
+}
+
+// ── MODAL ──
+function openModal(html){document.getElementById('modalContainer').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()">${html}</div>`;}
+function closeModal(){document.getElementById('modalContainer').innerHTML='';}
+
+// ══════════════════════════════════════════════════════
+// SUPABASE — Synchronisation temps réel multi-utilisateurs
+// ══════════════════════════════════════════════════════
+const SUPA_URL = 'https://pmynkoxjsswozccaozjc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBteW5rb3hqc3N3b3pjY2FvempjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMDAyNzMsImV4cCI6MjA5MjU3NjI3M30.NlI-0C5tKqHFJFBc5jF-rQlrmcN-kvfCyQ1C7HT4q2g';
+
+let supa = null;
+let supaConnected = false;
+let syncChannel = null;
+let isSyncing = false;
+
+function initSupabase(){
+  try{
+    if(typeof supabase === 'undefined' || !supabase.createClient){
+      console.warn('Supabase SDK not loaded yet');
+      supaConnected = false;
+      return false;
+    }
+    supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+    supaConnected = true;
+    updateSyncStatus('connecting');
+    return true;
+  } catch(e){
+    console.warn('Supabase init failed:', e);
+    supaConnected = false;
+    return false;
+  }
+}
+
+function updateSyncStatus(state){
+  // Also update config page dot if visible
+  const cfgDot=document.getElementById('cfgDot');
+  const cfgTxt=document.getElementById('cfgStatusTxt');
+  if(state==='ok'&&cfgDot){cfgDot.style.background='#4cde88';if(cfgTxt)cfgTxt.textContent='Connecté et synchronisé';}
+  else if(state==='error'&&cfgDot){cfgDot.style.background='#e05555';if(cfgTxt)cfgTxt.textContent='Erreur de connexion';}
+  const dot = document.getElementById('atDot');
+  const txt = document.getElementById('atTxt');
+  const syncDiv = document.getElementById('syncStatus');
+  const syncTxt = document.getElementById('syncTxt');
+  if(!dot) return;
+  if(state === 'ok'){
+    dot.className='status-dot on'; txt.textContent='Supabase connecté';
+    if(syncDiv) syncDiv.style.display='none';
+  } else if(state === 'connecting'){
+    dot.className='status-dot'; dot.style.background='#f0a040'; txt.textContent='Connexion…';
+  } else if(state === 'syncing'){
+    if(syncDiv){ syncDiv.style.display='flex'; syncTxt.textContent='Sync en cours…'; }
+  } else if(state === 'error'){
+    dot.className='status-dot'; dot.style.background='#e05555'; txt.textContent='Hors ligne (local)';
+    if(syncDiv) syncDiv.style.display='none';
+  }
+}
+
+// ── LOAD from Supabase ──
+async function loadFromSupabase(){
+  if(!supa) return false;
+  try{
+    updateSyncStatus('connecting');
+    const [ag, dl, rv, cfg] = await Promise.all([
+      supa.from('agences').select('*').order('id'),
+      supa.from('deals').select('*').order('id'),
+      supa.from('rdvs').select('*').order('id'),
+      supa.from('config').select('*').limit(1),
+    ]);
+    if(ag.error || dl.error || rv.error) throw ag.error||dl.error||rv.error;
+
+    DB.agences = (ag.data||[]).map(r=>({...r.data, _supa_id: r.id}));
+    DB.deals   = (dl.data||[]).map(r=>({...r.data, _supa_id: r.id}));
+    DB.rdvs    = (rv.data||[]).map(r=>({...r.data, _supa_id: r.id}));
+    if(cfg.data&&cfg.data.length>0){
+      const c = cfg.data[0].data;
+      DB.config = {...DB.config, ...c};
+      DB.primesDone = c.primesDone||[];
+    }
+    saveToLocalStorage();
+    updateSyncStatus('ok');
+    return true;
+  } catch(e){
+    console.warn('Supabase load error:', e);
+    updateSyncStatus('error');
+    return false;
+  }
+}
+
+// ── SAVE to Supabase ──
+async function saveToSupabase(){
+  if(!supa || isSyncing) return;
+  isSyncing = true;
+  updateSyncStatus('syncing');
+  try{
+    // Upsert agences
+    for(const a of DB.agences){
+      const {_supa_id, ...data} = a;
+      if(_supa_id){
+        await supa.from('agences').update({data}).eq('id', _supa_id);
+      } else {
+        const res = await supa.from('agences').insert({data}).select().single();
+        if(res.data) a._supa_id = res.data.id;
+      }
+    }
+    // Upsert deals
+    for(const d of DB.deals){
+      const {_supa_id, ...data} = d;
+      if(_supa_id){
+        await supa.from('deals').update({data}).eq('id', _supa_id);
+      } else {
+        const res = await supa.from('deals').insert({data}).select().single();
+        if(res.data) d._supa_id = res.data.id;
+      }
+    }
+    // Upsert rdvs
+    for(const r of DB.rdvs){
+      const {_supa_id, ...data} = r;
+      if(_supa_id){
+        await supa.from('rdvs').update({data}).eq('id', _supa_id);
+      } else {
+        const res = await supa.from('rdvs').insert({data}).select().single();
+        if(res.data) r._supa_id = res.data.id;
+      }
+    }
+    // Save config
+    const cfgData = {...DB.config, primesDone: DB.primesDone||[]};
+    const existing = await supa.from('config').select('id').limit(1);
+    if(existing.data&&existing.data.length>0){
+      await supa.from('config').update({data: cfgData}).eq('id', existing.data[0].id);
+    } else {
+      await supa.from('config').insert({data: cfgData});
+    }
+    saveToLocalStorage();
+    updateSyncStatus('ok');
+  } catch(e){
+    console.warn('Supabase save error:', e);
+    updateSyncStatus('error');
+    toast('⚠️ Erreur sync — données sauvées localement', false);
+  }
+  isSyncing = false;
+}
+
+// ── REALTIME subscription ──
+function subscribeRealtime(){
+  if(!supa) return;
+  syncChannel = supa.channel('bang-crm-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'agences'}, ()=>reloadFromSupabase())
+    .on('postgres_changes', {event:'*', schema:'public', table:'deals'},   ()=>reloadFromSupabase())
+    .on('postgres_changes', {event:'*', schema:'public', table:'rdvs'},    ()=>reloadFromSupabase())
+    .subscribe(status=>{
+      if(status==='SUBSCRIBED'){ updateSyncStatus('ok'); }
+    });
+}
+
+let reloadTimeout = null;
+async function reloadFromSupabase(){
+  // Debounce — wait 800ms before reloading to batch multiple changes
+  clearTimeout(reloadTimeout);
+  reloadTimeout = setTimeout(async ()=>{
+    await loadFromSupabase();
+    injectPrimeRdvs();
+    render();
+    toast('🔄 Données synchronisées');
+  }, 800);
+}
+
+// ── LOCAL STORAGE fallback ──
+const STORAGE_KEY='bang_crm_v3';
+function saveToLocalStorage(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(DB));}catch(e){}}
+function loadFromLocalStorage(){try{const r=localStorage.getItem(STORAGE_KEY);if(r){const d=JSON.parse(r);if(d.agences&&d.deals&&d.rdvs){DB=d;return true;}}}catch(e){}return false;}
+
+// ── UNIFIED SAVE — local + Supabase ──
+function saveToStorage(){
+  saveToLocalStorage();
+  if(supaConnected) saveToSupabase();
+}
+
+// ── EXPORT / IMPORT JSON ──
+function exportJSON(){const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='BANG_CRM_sauvegarde.json';a.click();URL.revokeObjectURL(url);toast('Sauvegarde téléchargée ✓');}
+function importJSON(){document.getElementById('importFile').click();}
+function loadJSON(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=async ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.agences&&d.deals){
+        DB=d;
+        saveToLocalStorage();
+        if(supaConnected) await saveToSupabase();
+        injectPrimeRdvs();render();
+        toast('Données restaurées et synchronisées ✓');
+      } else alert('Fichier invalide');
+    }catch{alert('Erreur JSON');}
+  };
+  r.readAsText(file);e.target.value='';
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+document.getElementById('todayDate').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+// 1. Load local data immediately so UI is instant
+const hasLocal = loadFromLocalStorage();
+injectPrimeRdvs();
+showPage('dashboard');
+
+// 2. Init Supabase once everything is loaded
+window.addEventListener('load', async () => {
+  // Retry init up to 5 times waiting for SDK
+  let attempts = 0;
+  while(attempts < 5){
+    if(initSupabase()) break;
+    await new Promise(r => setTimeout(r, 500));
+    attempts++;
+  }
+  if(!supaConnected){
+    updateSyncStatus('error');
+    toast('⚠️ Mode hors ligne — données locales uniquement', false);
+    return;
+  }
+  const ok = await loadFromSupabase();
+  if(ok){
+    injectPrimeRdvs();
+    render();
+    subscribeRealtime();
+    toast('✅ Connecté à Supabase — données synchronisées');
+  } else {
+    updateSyncStatus('error');
+    toast('⚠️ Mode hors ligne — données locales uniquement', false);
+  }
+});
+</script>
+</body>
+</html>
